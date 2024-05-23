@@ -28,3 +28,4 @@ CREATE TABLE employee (
   FOREIGN KEY (manager_id) REFERENCES  employee(id)
 );
 
+/* Above, I create my database, and the three tabels needed for this obj.
