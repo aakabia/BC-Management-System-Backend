@@ -5,6 +5,7 @@ const {
   SQLQuery,
   SQLAddDepQuery,
   SQLAddRoleQuery,
+  SQLAddEmployeeQuery,
 } = require("./queries/query");
 
 // Above I require four packages and my constructor class with functions for queries.
@@ -60,13 +61,29 @@ async function fetchRolesFromDatabase() {
     const result = await sqlQuery.allRoles();
     const rolesFromDatabase = result.rows.map((row) => row.title);
     roles.splice(0, roles.length, ...rolesFromDatabase);
-    /*const departmentIndex = result.rows.map((row) => ({
-      name: row.name,
+    const rolesIndex = result.rows.map((row) => ({
+      name: row.title,
       value: row.id,
     }));
-    return departmentIndex;*/
+    return rolesIndex;
   } catch (error) {
     console.error("Error fetching departments from database:", error);
+  }
+}
+
+async function fetchemployeesFromDatabase() {
+  try {
+    const result = await sqlQuery.allEmployess();
+
+    const employeeIndex = result.rows.map((row) => ({
+      name: `${row.first_name} ${row.last_name}`,
+      value: row.id,
+    }));
+    employeeIndex.push({ name: "No Manager Assigned", value: null });
+    // Above, I push a null value to the end of the array in case the employee does not have a manager.
+    return employeeIndex;
+  } catch (error) {
+    console.error("Error fetching employees from database:", error);
   }
 }
 
@@ -85,6 +102,7 @@ const questions = [
       "View All Employees",
       "Add A Department",
       "Add A Role",
+      "Add A Employee",
     ],
   },
 
@@ -92,6 +110,13 @@ const questions = [
     type: "input",
     name: "departmentName",
     message: "Please enter the department name:",
+    validate: function (input) {
+      if (input.trim() === "") {
+        return "Please enter a new department name!";
+      }
+      return true;
+    },
+
     when: (answers) => answers.choice === "Add A Department",
     // Above is the when method of inquerier that prompts another question based on a previous question answer.
   },
@@ -101,6 +126,10 @@ const questions = [
     name: "roleName",
     message: "Please enter the Role name:",
     validate: function (input) {
+      if (input.trim() === "") {
+        return "Please enter a new Role name!";
+      }
+
       const existingrole = roles.find((role) => role === input);
       if (existingrole) {
         console.log(" Role already in use!");
@@ -119,8 +148,12 @@ const questions = [
     name: "roleSalary",
     message: "Please enter the Role salary:",
     validate: function (input) {
+      if (input.trim() === "") {
+        return "Please enter a valid Salary!";
+      }
+
       if (isNaN(input)) {
-        return "Please enter a valid number!";
+        return "Please enter a valid Salary!";
       }
       return true;
     },
@@ -136,25 +169,77 @@ const questions = [
     // This instance is being used because the function is within the choices object.
     when: (answers) => answers.choice === "Add A Role",
   },
-];
 
-// Above is the first question the user will see.
+  {
+    type: "input",
+    name: "employeeFirst",
+    message: "Please enter the employee first name:",
+    validate: function (input) {
+      if (input.trim() === "") {
+        return "Please enter the employee First name!";
+      }
+      return true;
+    },
+
+    when: (answers) => answers.choice === "Add A Employee",
+  },
+
+  {
+    type: "input",
+    name: "employeeLast",
+    message: "Please enter the employee Last name:",
+    validate: function (input) {
+      if (input.trim() === "") {
+        return "Please enter the employee last name!";
+      }
+      return true;
+    },
+
+    when: (answers) => answers.choice === "Add A Employee",
+  },
+
+  {
+    type: "list",
+    name: "employeeRole",
+    message: "What is the employee role:",
+    choices: async () => await fetchRolesFromDatabase(),
+    // Above we call our function with async and await becuase it is a async function that returns a promise.
+    // This instance is being used because the function is within the choices object.
+    when: (answers) => answers.choice === "Add A Employee",
+  },
+
+  {
+    type: "list",
+    name: "employeeManager",
+    message: "Who is the employee manager:",
+    choices: async () => await fetchemployeesFromDatabase(),
+    when: (answers) => answers.choice === "Add A Employee",
+  },
+];
 
 function intit() {
   fetchDepartmentsFromDatabase();
   fetchRolesFromDatabase();
+  fetchemployeesFromDatabase();
   inquirer
     .prompt(questions)
-    //Above we call our async function normally and us inquirer after without a .then becuase our function returns a promise.
+    //Above we call our async functions normally and us inquirer after without a .then becuase our function returns a promise.
     .then((data) => {
       const choice = data.choice;
+      // Above is the inital choice recieved
       const departmentName = data.departmentName;
+      // ABove is the variable for adding a department
       const roleName = data.roleName;
       const roleSalary = data.roleSalary;
       const depID = data.departmentID;
+      // ABove are all the variables for adding a role
 
-      // Above, I get all my variables from my inquirer function
+      const employeeFirst = data.employeeFirst;
+      const employeeLast = data.employeeLast;
+      const employeeRole = data.employeeRole;
+      const employeeManager = data.employeeManager;
 
+      // Above, are all my variables for adding a employee.
 
       // Above, I prompt the question and assign the input to a variable named choice.
 
@@ -248,6 +333,31 @@ function intit() {
             .catch((error) => {
               console.error("Error executing Add departments query:", error);
               SqlAddRoleQ.close();
+            });
+
+          break;
+
+        case "Add A Employee":
+          // Above, is where we check if a department already exists before creating it. This is why we use the departments array.
+
+          let SqlAddemployeeQ = new SQLAddEmployeeQuery(
+            pool,
+            employeeFirst,
+            employeeLast,
+            employeeRole,
+            employeeManager
+          );
+
+          SqlAddemployeeQ.addEmployee()
+            .then(() => {
+              console.log("New employee added!");
+              SqlAddemployeeQ.close();
+            })
+            // Above we create a new add object and call the addEmployee method on it.
+
+            .catch((error) => {
+              console.error("Error executing Add employee query:", error);
+              SqlAddemployeeQ.close();
             });
 
           break;

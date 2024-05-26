@@ -42,6 +42,13 @@ class SQLQuery {
   }
   // Above, is a function to execute the roles table that i will use later.
 
+  allEmployess() {
+    return this.pool.query("SELECT * FROM employee").catch((error) => {
+      console.error("Error executing query:", error);
+      throw error;
+    });
+  }
+
   close() {
     this.pool.end();
     console.log("Database connection closed.");
@@ -105,4 +112,38 @@ class SQLAddRoleQuery extends SQLQuery {
   }
 }
 
-module.exports = { SQLQuery, SQLAddDepQuery, SQLAddRoleQuery };
+class SQLAddEmployeeQuery extends SQLQuery {
+  constructor(pool, firstName, lastName, roleID, managerID) {
+    super(pool);
+
+    this.firstName = firstName;
+    this.lastName = lastName;
+    this.roleID = roleID;
+    this.managerID = managerID;
+  }
+
+  addEmployee() {
+    return this.pool
+      .query(
+        `INSERT INTO employee (first_name, last_name, role_id, manager_id) VALUES ($1,$2,$3,$4)`,
+        [this.firstName, this.lastName, this.roleID, this.managerID]
+      )
+      .catch((error) => {
+        console.error("Error executing query:", error);
+        throw error;
+      });
+  }
+  // Above, we create the add employee method that queries an insert into the employee table.
+  close() {
+    this.pool.end();
+    console.log("Database connection closed.");
+    process.exit();
+  }
+}
+
+module.exports = {
+  SQLQuery,
+  SQLAddDepQuery,
+  SQLAddRoleQuery,
+  SQLAddEmployeeQuery,
+};
