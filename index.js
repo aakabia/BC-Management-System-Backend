@@ -108,6 +108,7 @@ const questions = [
       "View All Employees",
       "View Employee By Manager",
       "View Employee By Department",
+      "View combined Salary in each Department",
       "Add A Department",
       "Add A Role",
       "Add A Employee",
@@ -406,6 +407,22 @@ function intit() {
             });
           break;
 
+        case "View combined Salary in each Department":
+          sqlQuery
+            .departmentSalaryTotal()
+            .then((result) => {
+              console.table(result.rows);
+              sqlQuery.close();
+            })
+            .catch((error) => {
+              console.error(
+                "Error executing department total salary query:",
+                error
+              );
+              sqlQuery.close();
+            });
+          break;
+
         case "Add A Department":
           const existingDepartment = departments.find(
             (department) => department === departmentName
@@ -567,6 +584,10 @@ function intit() {
           console.log("Invalid choice.");
           break;
       }
+    })
+    .catch((error) => {
+      console.error("Error data from questions not recieved:", error);
+      SqlDeleteQ.close();
     });
 }
 
