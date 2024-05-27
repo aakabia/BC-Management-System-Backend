@@ -8,6 +8,7 @@ const {
   SQLAddEmployeeQuery,
   UpdateEmployeeRoleQuery,
   UpdateEmployeeManagerQuery,
+  SQLDeleteQuery,
 } = require("./queries/query");
 
 // Above I require four packages and my constructor class with functions for queries.
@@ -37,7 +38,10 @@ const roles = [
   "Senior Manager",
 ];
 
+let tableToDeleteFromLower;
+
 // Above, I create a array with the already exisitng departments and roles that I will later spread too.
+// Also, we create a instance of a lower case version of our table we want to delete from for part of our delete request.
 
 pool.connect();
 
@@ -103,11 +107,13 @@ const questions = [
       "View All Roles",
       "View All Employees",
       "View Employee By Manager",
+      "View Employee By Department",
       "Add A Department",
       "Add A Role",
       "Add A Employee",
       "Update Employee role",
       "Update Employee Manager",
+      "Delete Request",
     ],
   },
 
@@ -252,6 +258,38 @@ const questions = [
     choices: async () => await fetchemployeesFromDatabase(),
     when: (answers) => answers.choice === "Update Employee Manager",
   },
+
+  {
+    type: "list",
+    name: "deleteTable",
+    message: "Please pick where you want to delete from:",
+    choices: ["Department", "Role", "Employee"],
+    when: (answers) => answers.choice === "Delete Request",
+  },
+
+  {
+    type: "list",
+    name: "deleteIndex",
+    message: "Please pick what Department you want to delete:",
+    choices: async () => await fetchDepartmentsFromDatabase(),
+    when: (answers) => answers.deleteTable === "Department",
+  },
+
+  {
+    type: "list",
+    name: "deleteIndex",
+    message: "Please pick what Role you want to delete:",
+    choices: async () => await fetchRolesFromDatabase(),
+    when: (answers) => answers.deleteTable === "Role",
+  },
+
+  {
+    type: "list",
+    name: "deleteIndex",
+    message: "Please pick what Employee you want to delete:",
+    choices: async () => await fetchemployeesFromDatabase(),
+    when: (answers) => answers.deleteTable === "Employee",
+  },
 ];
 
 function intit() {
@@ -286,6 +324,13 @@ function intit() {
 
       let employeeManagerUpdateId = data.employeeManagerUpdateId;
       let employeeNewManagerId = data.employeeNewManagerId;
+
+      // Above, are the variables for updating a employee Manager
+
+      let tableToDeleteFrom = data.deleteTable;
+      let deleteIndex = data.deleteIndex;
+
+      // Above, are the variables for a delete request
 
       switch (choice) {
         case "View All Departments":
@@ -337,7 +382,26 @@ function intit() {
               sqlQuery.close();
             })
             .catch((error) => {
-              console.error("Error executing departments query:", error);
+              console.error(
+                "Error executing employee by manager query:",
+                error
+              );
+              sqlQuery.close();
+            });
+          break;
+
+        case "View Employee By Department":
+          sqlQuery
+            .employeesByDepartment()
+            .then((result) => {
+              console.table(result.rows);
+              sqlQuery.close();
+            })
+            .catch((error) => {
+              console.error(
+                "Error executing employee by department query:",
+                error
+              );
               sqlQuery.close();
             });
           break;
@@ -468,6 +532,33 @@ function intit() {
             .catch((error) => {
               console.error("Error executing Add employee query:", error);
               SqlUpdateManagerQ.close();
+            });
+
+          break;
+
+        case "Delete Request":
+          if (tableToDeleteFrom) {
+            tableToDeleteFromLower = tableToDeleteFrom.toLowerCase();
+          }
+
+          // Above, is to check if a table input exists and change that to lowercase.
+
+          let SqlDeleteQ = new SQLDeleteQuery(
+            pool,
+            tableToDeleteFromLower,
+            deleteIndex
+          );
+
+          SqlDeleteQ.deleteRecordById()
+            .then(() => {
+              console.log("Delete Request Successfull!");
+              SqlDeleteQ.close();
+            })
+            // Above we create a new add object and call the deleteRecordByID method on it.
+
+            .catch((error) => {
+              console.error("Error executing Add employee query:", error);
+              SqlDeleteQ.close();
             });
 
           break;

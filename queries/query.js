@@ -60,6 +60,17 @@ class SQLQuery {
       });
   }
 
+  employeesByDepartment() {
+    return this.pool
+      .query(
+        "SELECT employee.first_name, employee.last_name, department.name as department_name FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id "
+      )
+      .catch((error) => {
+        console.error("Error executing query:", error);
+        throw error;
+      });
+  }
+
   close() {
     this.pool.end();
     console.log("Database connection closed.");
@@ -208,6 +219,31 @@ class UpdateEmployeeManagerQuery extends SQLQuery {
   }
 }
 
+class SQLDeleteQuery extends SQLQuery {
+  constructor(pool, table, id) {
+    super(pool);
+    this.table = table;
+    this.id = id;
+  }
+  // Above, we inherit pool from its parent SQLQuery
+  deleteRecordById() {
+    return this.pool
+      .query(`DELETE FROM ${this.table} WHERE id = $1`, [this.id])
+      .catch((error) => {
+        console.error("Error executing query:", error);
+        throw error;
+      });
+  }
+  // Above, we create a delete method that queries an insert into any table.
+
+  close() {
+    this.pool.end();
+    console.log("Database connection closed.");
+    process.exit();
+  }
+  // Above, is a function that closes the db and exists back to the terminal.
+}
+
 module.exports = {
   SQLQuery,
   SQLAddDepQuery,
@@ -215,4 +251,5 @@ module.exports = {
   SQLAddEmployeeQuery,
   UpdateEmployeeRoleQuery,
   UpdateEmployeeManagerQuery,
+  SQLDeleteQuery,
 };
