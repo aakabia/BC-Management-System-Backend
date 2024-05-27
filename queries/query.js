@@ -141,9 +141,38 @@ class SQLAddEmployeeQuery extends SQLQuery {
   }
 }
 
+class UpdateEmployeeRoleQuery extends SQLQuery {
+  constructor(pool, employeeID, newRoleID) {
+    super(pool);
+
+    this.employeeID = employeeID;
+    this.newRoleID = newRoleID;
+  }
+
+  upDateEmployeeRole() {
+    return this.pool
+      .query(`UPDATE employee SET role_id = $1 WHERE id = $2`, [
+        this.newRoleID,
+        this.employeeID,
+      ])
+
+      .catch((error) => {
+        console.error("Error executing query:", error);
+        throw error;
+      });
+  }
+  // Above, we create the a update employee method that queries an update to role_id in employee table.
+  close() {
+    this.pool.end();
+    console.log("Database connection closed.");
+    process.exit();
+  }
+}
+
 module.exports = {
   SQLQuery,
   SQLAddDepQuery,
   SQLAddRoleQuery,
   SQLAddEmployeeQuery,
+  UpdateEmployeeRoleQuery,
 };

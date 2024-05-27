@@ -6,6 +6,7 @@ const {
   SQLAddDepQuery,
   SQLAddRoleQuery,
   SQLAddEmployeeQuery,
+  UpdateEmployeeRoleQuery,
 } = require("./queries/query");
 
 // Above I require four packages and my constructor class with functions for queries.
@@ -79,7 +80,7 @@ async function fetchemployeesFromDatabase() {
       name: `${row.first_name} ${row.last_name}`,
       value: row.id,
     }));
-    employeeIndex.push({ name: "No Manager Assigned", value: null });
+    employeeIndex.push({ name: "None", value: null });
     // Above, I push a null value to the end of the array in case the employee does not have a manager.
     return employeeIndex;
   } catch (error) {
@@ -103,6 +104,7 @@ const questions = [
       "Add A Department",
       "Add A Role",
       "Add A Employee",
+      "Update Employee role",
     ],
   },
 
@@ -215,6 +217,22 @@ const questions = [
     choices: async () => await fetchemployeesFromDatabase(),
     when: (answers) => answers.choice === "Add A Employee",
   },
+
+  {
+    type: "list",
+    name: "employeeRoleUpdateId",
+    message: "Which employees role would you like to update:",
+    choices: async () => await fetchemployeesFromDatabase(),
+    when: (answers) => answers.choice === "Update Employee role",
+  },
+
+  {
+    type: "list",
+    name: "employeeNewRoleId",
+    message: "What is the employees new role:",
+    choices: async () => await fetchRolesFromDatabase(),
+    when: (answers) => answers.choice === "Update Employee role",
+  },
 ];
 
 function intit() {
@@ -240,6 +258,10 @@ function intit() {
       const employeeManager = data.employeeManager;
 
       // Above, are all my variables for adding a employee.
+
+      const employeeRoleUpdateid = data.employeeRoleUpdateId;
+      const employeeNewROLE = data.employeeNewRoleId;
+      // Above, are the variables for updating a employee role
 
       // Above, I prompt the question and assign the input to a variable named choice.
 
@@ -358,6 +380,35 @@ function intit() {
             .catch((error) => {
               console.error("Error executing Add employee query:", error);
               SqlAddemployeeQ.close();
+            });
+
+          break;
+
+        case "Update Employee role":
+          // Above, is where we check if a department already exists before creating it. This is why we use the departments array.
+
+          if (employeeRoleUpdateid === null) {
+            console.log("No Employee Chosen, No Update Made!");
+            process.exit();
+          }
+          // Above, is to notify the user that no update was made due to no employee being chosen.
+
+          let SqlUpdateRoleQ = new UpdateEmployeeRoleQuery(
+            pool,
+            employeeRoleUpdateid,
+            employeeNewROLE
+          );
+
+          SqlUpdateRoleQ.upDateEmployeeRole()
+            .then(() => {
+              console.log("Updated Employee Role!");
+              SqlUpdateRoleQ.close();
+            })
+            // Above we create a new add object and call the addEmployee method on it.
+
+            .catch((error) => {
+              console.error("Error executing Add employee query:", error);
+              SqlUpdateRoleQ.close();
             });
 
           break;
