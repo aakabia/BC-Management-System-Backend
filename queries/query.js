@@ -71,6 +71,21 @@ class SQLQuery {
       });
   }
 
+
+  departmentSalaryTotal(){
+    return this.pool
+      .query(
+        "SELECT department.name As department_name, SUM(role.salary) AS total_sum FROM employee JOIN role ON employee.role_id = role.id JOIN department ON role.department_id = department.id GROUP BY department.name "
+      )
+      .catch((error) => {
+        console.error("Error executing query:", error);
+        throw error;
+      });
+  }
+
+
+  // Above are different queries that I run on the database tabels.
+
   close() {
     this.pool.end();
     console.log("Database connection closed.");
@@ -243,6 +258,18 @@ class SQLDeleteQuery extends SQLQuery {
   }
   // Above, is a function that closes the db and exists back to the terminal.
 }
+
+
+
+
+
+
+
+
+
+
+
+
 
 module.exports = {
   SQLQuery,
