@@ -49,6 +49,17 @@ class SQLQuery {
     });
   }
 
+  employeesByManager() {
+    return this.pool
+      .query(
+        "SELECT e.first_name, e.last_name, m.first_name AS manager_first_name, m.last_name AS manager_last_name FROM employee e LEFT JOIN employee m ON e.manager_id = m.id "
+      )
+      .catch((error) => {
+        console.error("Error executing query:", error);
+        throw error;
+      });
+  }
+
   close() {
     this.pool.end();
     console.log("Database connection closed.");
@@ -169,10 +180,39 @@ class UpdateEmployeeRoleQuery extends SQLQuery {
   }
 }
 
+class UpdateEmployeeManagerQuery extends SQLQuery {
+  constructor(pool, employeeID, newManagerId) {
+    super(pool);
+
+    this.employeeID = employeeID;
+    this.newManagerId = newManagerId;
+  }
+
+  upDateEmployeeManager() {
+    return this.pool
+      .query(`UPDATE employee SET manager_id = $1 WHERE id = $2`, [
+        this.newManagerId,
+        this.employeeID,
+      ])
+
+      .catch((error) => {
+        console.error("Error executing query:", error);
+        throw error;
+      });
+  }
+  // Above, we create the a update employee method that queries an update to role_id in employee table.
+  close() {
+    this.pool.end();
+    console.log("Database connection closed.");
+    process.exit();
+  }
+}
+
 module.exports = {
   SQLQuery,
   SQLAddDepQuery,
   SQLAddRoleQuery,
   SQLAddEmployeeQuery,
   UpdateEmployeeRoleQuery,
+  UpdateEmployeeManagerQuery,
 };
